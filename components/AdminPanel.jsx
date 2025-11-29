@@ -456,10 +456,13 @@ const AdminPanel = ({ onLogout }) => {
                                                 <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-gray-900">{order.customerName || "Neznámý"}</div>
                                                     <div className="text-xs text-gray-500">{order.customerEmail}</div>
-                                                    <div className="text-xs text-gray-400 mt-1">ID: {order.id.substring(0,8)}...</div>
+                                                    
+                                                    {/* --- ZMĚNA: Použití Čísla objednávky místo ID --- */}
+                                                    <div className="text-xs text-stone-500 mt-1">
+                                                        Č. obj: <span className="font-bold text-stone-700">#{order.id.slice(-5).toUpperCase()}</span>
+                                                    </div>
                                                 </td>
                                                 
-                                                {/* --- TADY BYLA CHYBA: OPRAVENÝ VÝPIS POLOŽEK --- */}
                                                 <td className="px-6 py-4 text-sm text-gray-600">
                                                     {Array.isArray(order.items) ? (
                                                         // Starý formát (pole objektů)
