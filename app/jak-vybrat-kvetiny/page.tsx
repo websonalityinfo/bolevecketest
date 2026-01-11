@@ -11,7 +11,7 @@ import CartSidebar from "../../components/CartSidebar";
 export const metadata: Metadata = {
     title: 'Jak vybrat květiny | Bolevecké květiny',
     description: 'Průvodce výběrem květin podle barev, příležitostí a osobnosti obdarovaného. Tipy pro každou situaci.',
-    alternates: { canonical: 'https://ixiakvetiny.free.nf/jak-vybrat-kvetiny', },
+    alternates: { canonical: 'https://bolevecketest.netlify.app/jak-vybrat-kvetiny', },
 };
 
 // =================================================================

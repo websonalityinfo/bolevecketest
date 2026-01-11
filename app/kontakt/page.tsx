@@ -10,7 +10,7 @@ import CartSidebar from "../../components/CartSidebar";
 export const metadata: Metadata = {
     title: 'Kontakt | Bolevecké květiny',
     description: 'Kontaktujte nás. Jsme tu pro vás. Adresa, telefon, otevírací doba a kontaktní formulář.',
-    alternates: { canonical: 'https://ixiakvetiny.free.nf/kontakt', },
+    alternates: { canonical: 'https://bolevecketest.netlify.app/kontakt', },
 };
 
 // =================================================================

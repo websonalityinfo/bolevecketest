@@ -11,7 +11,7 @@ import CartSidebar from "../../components/CartSidebar";
 export const metadata: Metadata = {
     title: 'Služby a ceny | Bolevecké květiny',
     description: 'Prohlédněte si naše služby a cenové balíčky. Malé, střední i velké kytice pro každou příležitost.',
-    alternates: { canonical: 'https://ixiakvetiny.free.nf/sluzby', },
+    alternates: { canonical: 'https://bolevecketest.netlify.app/sluzby', },
 };
 
 // =================================================================

@@ -11,7 +11,7 @@ import CartSidebar from "../../components/CartSidebar";
 export const metadata: Metadata = {
     title: 'Péče o květiny | Bolevecké květiny',
     description: 'Naučte se správně pečovat o řezané květiny. Tipy a rady pro prodloužení jejich života a krásy.',
-    alternates: { canonical: 'https://ixiakvetiny.free.nf/pece-o-kvetiny', },
+    alternates: { canonical: 'https://bolevecketest.netlify.app/pece-o-kvetiny', },
 };
 
 // =================================================================

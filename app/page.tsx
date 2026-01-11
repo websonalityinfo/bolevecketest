@@ -8,7 +8,7 @@ import PageContent from "./PageContent";
 export const metadata: Metadata = {
   title: 'Bolevecké květiny | Kytice, Svatební vazby a Rozvoz květin', // Unikátní, SEO-optimalizovaný titul
   description: 'Vstupte do světa Boleveckých květin! Objevte denně čerstvé, ručně vázané kytice, luxusní svatební vazby a dokonalé firemní dekorace.',
-  alternates: { canonical: 'https://ixiakvetiny.free.nf/', }, // Unikátní adresa
+  alternates: { canonical: 'https://bolevecketest.netlify.app/', },
 };
 
 // =================================================================
@@ -21,8 +21,8 @@ export default function Page() {
     "@context": "https://schema.org",
     "@type": "Florist, Flowershop, Květinářství",
     "name": "Bolevecké květiny",
-    "image": "https://ixiakvetiny.free.nf/logo.png", // Plná URL k logu
-    "url": "https://ixiakvetiny.free.nf",
+    "image": "https://bolevecketest.netlify.app/logo.png",
+    "url": "https://bolevecketest.netlify.app",
     "telephone": "+420 373 315 413",
     "priceRange": "$$", // Použijte $, $$, $$$ pro cenovou hladinu
     "address": {

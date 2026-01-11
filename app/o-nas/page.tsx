@@ -11,7 +11,7 @@ import CartSidebar from "../../components/CartSidebar";
 export const metadata: Metadata = {
     title: 'O nás | Bolevecké květiny',
     description: 'Poznejte náš příběh. Jsme rodinné květinářství s láskou k přírodě a čerstvým květinám.',
-    alternates: { canonical: 'https://ixiakvetiny.free.nf/o-nas', },
+    alternates: { canonical: 'https://bolevecketest.netlify.app/o-nas', },
 };
 
 // =================================================================
