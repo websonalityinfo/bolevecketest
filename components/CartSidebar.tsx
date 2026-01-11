@@ -1,55 +1,53 @@
 "use client";
-import React, { useState } from "react"; // PŘIDÁNO useState
+import React, { useState } from "react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import Image from "next/image";
 
-const CartSidebar = () => {
+const CartSidebar: React.FC = () => {
   const { 
     cartItems, 
     removeFromCart, 
     updateQuantity, 
     cartTotal, 
     isCartOpen, 
-    setIsCartOpen 
+    setIsCartOpen,
+    // CRITICAL: Destructure state for the note input
+    orderNote,
+    setOrderNote
   } = useCart();
 
-  // Stav pro načítání (aby uživatel neklikal 2x)
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
 
-  // --- TOTO JE TA DŮLEŽITÁ ZMĚNA ---
+  // --- HANDLE CHECKOUT ---
   const handleCheckout = async () => {
-    setIsLoading(true); // Zapneme točící se kolečko
+    setIsLoading(true);
 
     try {
-      // 1. Pošleme data na tvůj backend (route.ts)
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ items: cartItems }),
+        body: JSON.stringify({ items: cartItems, orderNote: orderNote }),
       });
 
       const data = await response.json();
 
-      // 2. Pokud backend vrátil URL, přesměrujeme tam uživatele
       if (data.url) {
         window.location.href = data.url;
       } else {
-        // Pokud nastala chyba na backendu
         console.error("Chyba z backendu:", data.error);
-        alert("Chyba: " + (data.error || "Nepodařilo se vytvořit platbu."));
+        setPaymentError("Platbu se nepodařilo vytvořit. Zkuste vypnout AdBlock nebo použijte jiný prohlížeč.");
         setIsLoading(false);
       }
     } catch (error) {
-      // Pokud selhala síť nebo fetch
       console.error("Chyba sítě:", error);
-      alert("Nepodařilo se spojit se serverem. Zkontroluj konzoli.");
+      setPaymentError("Platbu se nepodařilo dokončit. Zkontrolujte připojení k internetu a případně vypněte AdBlock.");
       setIsLoading(false);
     }
   };
-  // ---------------------------------
 
   return (
     <AnimatePresence>
@@ -60,7 +58,7 @@ const CartSidebar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsCartOpen(false)}
-            className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm cursor-pointer"
+            className="fixed inset-0 bg-black/50 z-9998 backdrop-blur-sm cursor-pointer"
           />
 
           <motion.div
@@ -68,7 +66,7 @@ const CartSidebar = () => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-[9999] shadow-2xl flex flex-col"
+            className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-9999 shadow-2xl flex flex-col"
           >
             <div className="p-6 flex justify-between items-center border-b border-stone-100">
               <h2 className="text-2xl font-bold text-stone-800 font-serif">Váš košík</h2>
@@ -92,54 +90,83 @@ const CartSidebar = () => {
                   </button>
                 </div>
               ) : (
-                cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 group">
-                    <div className="w-24 h-24 relative bg-stone-50 rounded-lg overflow-hidden flex-shrink-0 border border-stone-100">
-                      <Image 
-                        src={item.img || item.imageUrl || "/placeholder.jpg"} 
-                        alt={item.name} 
-                        fill 
-                        className="object-cover" 
-                        sizes="96px"
-                      />
-                    </div>
+                // Zde je opravená syntaxe mapování (Používáme implicitní return)
+                cartItems.map((item) => {
+                  const isMaxStock = item.quantity >= item.stock;
 
-                    <div className="flex-1 flex flex-col justify-between py-1">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-semibold text-stone-900 text-lg leading-tight">{item.name}</h4>
-                          <p className="font-medium text-stone-900 ml-2">{item.price * item.quantity} Kč</p>
-                        </div>
-                        <p className="text-stone-500 text-sm mt-1">{item.price} Kč / ks</p>
+                  return (
+                    <div key={item.id} className="flex gap-4 group">
+                      <div className="w-24 h-24 relative bg-stone-50 rounded-lg overflow-hidden shrink-0 border border-stone-100">
+                        <Image 
+                          src={item.img || item.imageUrl || "/placeholder.jpg"} 
+                          alt={item.name} 
+                          fill 
+                          className="object-cover" 
+                          sizes="96px"
+                        />
                       </div>
-                      
-                      <div className="flex justify-between items-end mt-2">
-                        <div className="flex items-center border border-stone-200 rounded-md">
+
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-semibold text-stone-900 text-lg leading-tight">{item.name}</h4>
+                            <p className="font-medium text-stone-900 ml-2">{item.price * item.quantity} Kč</p>
+                          </div>
+                          <p className="text-stone-500 text-sm mt-1">{item.price} Kč / ks</p>
+                        </div>
+                        
+                        <div className="flex justify-between items-end mt-2">
+                          <div className="flex items-center border border-stone-200 rounded-md">
+                            <button 
+                              onClick={() => updateQuantity(item.id, -1)} 
+                              className="px-3 py-1 hover:bg-stone-50 text-stone-600 transition-colors"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 text-sm font-medium w-8 text-center">{item.quantity}</span>
+                            
+                            <button 
+                              onClick={() => updateQuantity(item.id, 1)} 
+                              disabled={isMaxStock}
+                              className={`px-3 py-1 transition-colors ${
+                                isMaxStock ? "bg-red-100 text-red-500 cursor-not-allowed" : "hover:bg-stone-50 text-stone-600"
+                              }`}
+                            >
+                              +
+                            </button>
+                          </div>
                           <button 
-                            onClick={() => updateQuantity(item.id, -1)} 
-                            className="px-3 py-1 hover:bg-stone-50 text-stone-600 transition-colors"
+                            onClick={() => removeFromCart(item.id)} 
+                            className="text-xs text-red-500 hover:text-red-700 underline decoration-red-200 underline-offset-2 transition-colors"
                           >
-                            -
-                          </button>
-                          <span className="px-2 text-sm font-medium w-8 text-center">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, 1)} 
-                            className="px-3 py-1 hover:bg-stone-50 text-stone-600 transition-colors"
-                          >
-                            +
+                            Odebrat
                           </button>
                         </div>
-                        <button 
-                          onClick={() => removeFromCart(item.id)} 
-                          className="text-xs text-red-500 hover:text-red-700 underline decoration-red-200 underline-offset-2 transition-colors"
-                        >
-                          Odebrat
-                        </button>
+                        {isMaxStock && (
+                            <p className="text-xs text-red-500 mt-1">Maximum na skladě!</p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
+                
+                {/* NOVÉ: Pole pro vzkaz - TATO ČÁST NYNÍ VYŘEŠÍ CHYBĚJÍCÍ INPUT */}
+                {cartItems.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-stone-200">
+                        <label htmlFor="order-note" className="block text-sm font-medium text-stone-700 mb-2">
+                            Vzkaz / Barva stuhy / Přání:
+                        </label>
+                        <textarea
+                            id="order-note"
+                            rows={3}
+                            value={orderNote}
+                            onChange={(e) => setOrderNote(e.target.value)}
+                            placeholder="Např. barva stuhy: červená, doručte do 16:00, napsat přání: Hodně štěstí."
+                            className="w-full p-3 border border-stone-300 rounded-md focus:ring-rose-500 focus:border-rose-500 transition-colors resize-none"
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="p-6 border-t border-stone-100 bg-stone-50/50">
@@ -159,7 +186,11 @@ const CartSidebar = () => {
                 </span>
               </div>
 
-              {/* Tlačítko nyní reaguje na isLoading */}
+              {paymentError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm text-center">
+                  {paymentError}
+                </div>
+              )}
               <button 
                 onClick={handleCheckout}
                 disabled={cartItems.length === 0 || isLoading}

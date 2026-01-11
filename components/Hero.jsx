@@ -1,16 +1,30 @@
-import React from "react";
+"use client";
+import React, { use } from "react";
 import { motion } from "framer-motion";
 
 const Hero = () => {
-  
+
   // Text pro SEO: Dlouhý, plný klíčových slov a lokality (skrytý)
-  const seoH1 = "Květinářství Iveta: Ručně vázané kytice, Svatební vazby a Spolehlivý Rozvoz Květin po Praze"; 
-  
+  const seoH1 = "Bolevecké květiny: Ručně vázané kytice, Svatební vazby a Spolehlivý Rozvoz Květin po Praze";
+
   // Text pro Design: Krátký a poutavý (vizuálně zobrazený)
-  const visualTitle = "Květinářství Iveta"; 
-  
+  const visualTitle = "Bolevecké květiny";
+
   // Text pro Design: Podnadpis
-  const visualSubheading = "Krásné květiny pro každý okamžik"; 
+  const visualSubheading = "Krásné květiny pro každý okamžik";
+
+  // Funkce pro plynulý scroll s odsazením
+  const handleSmoothScroll = (e, href) => {
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const el = document.querySelector(href);
+      if (el) {
+        const offset = -50; // Odsazení kvůli navbaru
+        const y = el.getBoundingClientRect().top + window.pageYOffset + offset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <section id="home" className="relative pt-0 h-screen flex items-center justify-center overflow-hidden">
@@ -21,7 +35,7 @@ const Hero = () => {
         animate={{ scale: 1 }}
         transition={{ duration: 1.5 }}
       />
-      
+
       {/* Obsah - je nad pozadím (z-10) */}
       <motion.div
         className="relative z-10 text-center px-4"
@@ -29,26 +43,30 @@ const Hero = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
       >
-        
+
         {/* 1. SEO H1 TAG: VIZUÁLNĚ SKRYTÝ, ALE ČITELNÝ PRO VYHLEDÁVAČE */}
         {/* Zajišťuje, že stránka má H1 s plnými klíčovými slovy */}
         <h1 className="sr-only">
           {seoH1}
         </h1>
-        
+
         {/* 2. VIZUÁLNÍ NADPIS (použijeme H2 pro vizuální design) */}
         {/* Tento element je velký a krásný a je viditelný pro uživatele */}
         <h2 className="text-5xl md:text-6xl font-extrabold text-green-900 mb-4">
           {visualTitle}
         </h2>
-        
+
         {/* Podnadpis */}
         <p className="text-xl md:text-2xl text-green-800">
           {visualSubheading}
         </p>
-        
+
         {/* CTA tlačítko */}
-        <a href="#services" className="mt-8 inline-block px-6 py-3 bg-green-700 text-white font-semibold rounded-lg shadow hover:bg-green-800 transition">
+        <a
+          href="#flowers"
+          onClick={(e) => handleSmoothScroll(e, '#flowers')} // ZMĚNA: Voláme novou funkci
+          className="mt-8 inline-block px-6 py-3 bg-green-700 text-white font-semibold rounded-lg shadow hover:bg-green-800 transition"
+        >
           Prozkoumat nabídku
         </a>
       </motion.div>

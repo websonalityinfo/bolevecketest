@@ -1,15 +1,16 @@
+"use client";
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
 const About = () => {
   return (
-    <section id="about" className="py-20 md:py-28 bg-stone-50 overflow-hidden">
+    <section className="py-20 md:py-28 bg-stone-50 overflow-hidden">
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
-          
+
           {/* 1. OBRÁZEK (Levá strana) */}
-          <motion.div 
+          <motion.div
             className="w-full md:w-1/2"
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -19,20 +20,20 @@ const About = () => {
             <div className="relative">
               {/* Ozdobný rámeček pod fotkou */}
               <div className="absolute top-4 left-4 w-full h-full border-2 border-green-800/20 rounded-lg z-0"></div>
-              
+
               {/* Samotná fotka */}
-              <Image 
-                src="/obchod.jpeg"
-                alt="Interiér našeho květinářství" 
+              <Image
+                src="/obchod.jpg"
+                alt="Interiér našeho květinářství"
                 className="relative z-10 w-full h-[400px] lg:h-[600px] object-cover rounded-lg shadow-md"
-                width={800} 
-                height={600}
+                width={700}
+                height={700}
               />
             </div>
           </motion.div>
 
           {/* 2. TEXT (Pravá strana) */}
-          <motion.div 
+          <motion.div
             className="w-full md:w-1/2 text-center md:text-left"
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -43,7 +44,7 @@ const About = () => {
               Náš příběh
             </h2>
             <h2 className="text-3xl md:text-5xl font-serif font-medium text-stone-900 mb-6 leading-tight">
-              Více než jen <br/> květinářství
+              Více než jen <br /> květinářství
             </h2>
             <div className="space-y-6 text-stone-600 text-lg leading-relaxed">
               <p>
@@ -63,7 +64,7 @@ const About = () => {
                 "S láskou k přírodě."
               </p>
               <p className="text-sm text-stone-500 mt-2 uppercase tracking-wide">
-                — Tým Květinářství Iveta
+                — Tým Bolevecké květiny
               </p>
             </div>
           </motion.div>

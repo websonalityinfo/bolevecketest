@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+// PŘIDÁNO: updateDoc a increment pro odečítání ze skladu
+import { doc, setDoc, getDoc, updateDoc, increment } from "firebase/firestore";
 import emailjs from "@emailjs/nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -30,11 +31,44 @@ export async function POST(req: Request) {
       console.log("INFO: Objednávka už existuje, končím.");
       return NextResponse.json({ message: "Objednávka již existuje", orderId: sessionId });
     }
+    
+    // --- NOVÉ: LOGIKA PRO ODEČTENÍ ZE SKLADU ---
+    const stockData = session.metadata?.stock_update; // Přečtení "ID:Množství;ID:Množství"
+    
+    if (stockData) {
+        console.log("4. AKTUALIZACE SKLADU: Zpracovávám...");
+        const itemsToUpdate = stockData.split(';'); 
+        
+        for (const itemStr of itemsToUpdate) {
+            const [flowerId, quantityStr] = itemStr.split(':');
+            const quantity = Number(quantityStr);
+
+            if (flowerId && quantity > 0) {
+                try {
+                    const flowerRef = doc(db, "flowers", flowerId);
+                    // Snížíme sklad o zakoupené množství
+                    await updateDoc(flowerRef, {
+                        stock: increment(-quantity)
+                    });
+                    console.log(` -> Odečteno ${quantity} ks u ID: ${flowerId}`);
+                } catch (err) {
+                    console.error(` -> CHYBA při odečítání skladu u ID ${flowerId}:`, err);
+                    // Pokud je chyba (např. špatné ID), zalogujeme a pokračujeme
+                }
+            }
+        }
+    } else {
+        console.log("SKLAD: Žádná data pro aktualizaci skladu.");
+    }
+    // ---------------------------------------------
+
 
     const customerEmail = session.customer_details?.email;
+    // NOVÉ: Čteme vzkaz z metadat
+    const customerNote = session.metadata?.customer_note || "Zákazník nezadal vzkaz."; 
     console.log("2. Email zákazníka:", customerEmail);
 
-    // Uložení do DB
+    // Uložení do DB (Zahrnuje i Vzkaz)
     await setDoc(orderRef, {
       createdAt: new Date().toISOString(),
       amount: session.amount_total ? session.amount_total / 100 : 0,
@@ -42,6 +76,7 @@ export async function POST(req: Request) {
       customerName: session.customer_details?.name || "Zákazník",
       customerEmail: customerEmail || "",
       items: session.metadata?.order_items || "Neuvedeno",
+      customerNote: customerNote, // <--- ULOŽENÍ VZKAZU DO DATABÁZE
       status: "new",
       fulfillmentStatus: "RECEIVED",
       stripeSessionId: sessionId
@@ -50,7 +85,7 @@ export async function POST(req: Request) {
 
     // --- DIAGNOSTIKA EMAILJS ---
     if (customerEmail) {
-      console.log("4. Pokus o odeslání e-mailu...");
+      console.log("5. Pokus o odeslání e-mailu...");
       
       // Kontrola klíčů (Vypíšeme jen jestli existují, ne jejich obsah)
       console.log("   -> Klíče kontrola:", {
@@ -77,9 +112,9 @@ export async function POST(req: Request) {
             privateKey: process.env.EMAILJS_PRIVATE_KEY!,
           }
         );
-        console.log("5. SUCCESS: EmailJS odesláno!");
+        console.log("6. SUCCESS: EmailJS odesláno!");
       } catch (err) {
-        console.error("6. ERROR EmailJS selhal:", err);
+        console.error("7. ERROR EmailJS selhal:", err);
       }
     } else {
         console.log("CHYBA: Email neodeslán - chybí email zákazníka ve Stripe datech");

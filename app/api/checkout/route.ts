@@ -8,7 +8,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const { items } = await req.json();
+    // ZMĚNA: Přidáme orderNote do destrukturovaných proměnných, pokud ho tam posílá frontend
+    const { items, orderNote } = await req.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Košík je prázdný" }, { status: 400 });
@@ -20,17 +21,22 @@ export async function POST(req: Request) {
         currency: "czk",
         product_data: {
           name: item.name,
-          images: item.img ? [item.img] : [], // Pokud máš obrázky
+          images: item.img ? [item.img] : [], 
         },
         unit_amount: Math.round(item.price * 100), // Cena v haléřích
       },
       quantity: item.quantity,
     }));
 
-    // 2. Vytvoříme metadata (seznam zboží jako text pro uložení do DB)
+    // 2. Vytvoříme metadata (seznam zboží jako text pro uložení do DB a emailu)
     const cartMetadata = items
       .map((item: any) => `${item.quantity}x ${item.name}`)
       .join(", ");
+
+    // --- PŘÍPRAVA DAT PRO SKLAD: Formát "ID:Množství;ID:Množství" ---
+    const stockMetadata = items
+      .map((item: any) => `${item.id}:${item.quantity}`)
+      .join(";");
 
     // 3. Vytvoříme Stripe Session
     const session = await stripe.checkout.sessions.create({
@@ -38,13 +44,15 @@ export async function POST(req: Request) {
       line_items: lineItems,
       mode: "payment",
       
-      // Nutné pro osobní odběr (chceme fakturační údaje, ne doručovací)
+      // Nutné pro osobní odběr
       billing_address_collection: "required",
       shipping_address_collection: undefined,
 
-      // Uložíme si seznam zboží "do kapsy" transakce
+      // Uložíme si seznam zboží a VZKAZ do metadat transakce
       metadata: {
-        order_items: cartMetadata.substring(0, 500), // Ořízneme, kdyby to bylo moc dlouhé
+        order_items: cartMetadata.substring(0, 500),
+        stock_update: stockMetadata.substring(0, 500), // <-- ID pro odečtení ze skladu
+        customer_note: orderNote ? orderNote.substring(0, 500) : undefined, // <-- Vzkaz
       },
 
       custom_text: {
