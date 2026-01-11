@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
+
 // Importy komponent
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import Flowers from "../components/Flowers";
 import Contact from "../components/Contact"; // Modální verze
 import AdminLogin from "../components/AdminLogin";
 import AdminPanel from "../components/AdminPanel";
@@ -11,6 +12,12 @@ import Footer from "../components/Footer";
 
 // --- IMPORT PRO KOŠÍK ---
 import CartSidebar from "../components/CartSidebar";
+
+// --- DYNAMIC IMPORT pro těžkou komponentu (lazy loading) ---
+const Flowers = dynamic(() => import("../components/Flowers"), {
+    loading: () => <div className="min-h-screen flex items-center justify-center"><p className="text-stone-600">Načítám květiny...</p></div>,
+    ssr: true // Server-side rendering pro SEO
+});
 
 const PageContent = () => {
     // --- STAVY ---
