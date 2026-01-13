@@ -873,7 +873,7 @@ const AdminPanel = ({ onLogout }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {kvetiny
               .filter((k) => !filterSekce || k.sekce === filterSekce)
               .sort((a, b) => {
@@ -897,9 +897,9 @@ const AdminPanel = ({ onLogout }) => {
               .map((k) => (
                 <div
                   key={k.id}
-                  className="border p-4 rounded shadow bg-white flex flex-col relative"
+                  className="border p-2 md:p-4 rounded shadow bg-white flex flex-col relative"
                 >
-                  <div className="h-40 w-full relative mb-4">
+                  <div className="h-32 md:h-40 w-full relative mb-4">
                     {k.urlObrazku ? (
                       <Image
                         src={k.urlObrazku}
@@ -914,8 +914,8 @@ const AdminPanel = ({ onLogout }) => {
                       Sklad: {k.stock} ks
                     </div>
                   </div>
-                  <h3 className="font-bold text-lg">{k.nazev}</h3>
-                  <p className="text-gray-500 text-sm">
+                  <h3 className="font-bold text-base md:text-lg truncate">{k.nazev}</h3>
+                  <p className="text-gray-500 text-xs md:text-sm">
                     {k.sekce} - {k.cena} Kč
                   </p>
                   <div className="mt-auto flex gap-2 pt-2">

@@ -91,7 +91,7 @@ const Flowers = () => {
             >
               {collection.title}
             </motion.h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-x-8 md:gap-y-12">
               {collection.items.map((item, itemIndex) => (
                 <motion.div
                   key={item.id}
@@ -107,7 +107,7 @@ const Flowers = () => {
                       alt={`${item.name} - Čerstvé květiny z Boleveckého květinářství`}
                       width={400}
                       height={400}
-                      className="w-full h-96 object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-48 sm:h-64 md:h-96 object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
                     {item.stock > 0 && (
@@ -133,11 +133,11 @@ const Flowers = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-col grow px-2">
-                    <h3 className="text-lg font-medium text-stone-900 mb-2 leading-tight">
+                  <div className="flex flex-col grow px-1 md:px-2">
+                    <h3 className="text-base md:text-lg font-medium text-stone-900 mb-1 leading-tight">
                       {item.name}
                     </h3>
-                    <p className="text-stone-800 font-semibold mb-1 text-lg">
+                    <p className="text-stone-800 font-semibold mb-1 text-base md:text-lg">
                       {item.price} Kč
                     </p>
 
