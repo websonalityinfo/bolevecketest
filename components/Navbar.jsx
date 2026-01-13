@@ -83,11 +83,12 @@ const Navbar = () => {
               height={200}
               alt="Logo"
               className="object-contain"
+              priority
             />
           </a>
 
           {/* 2. DESKTOP MENU (Div Střed) */}
-          <div className="hidden md:flex flex-grow justify-center">
+          <div className="hidden xl:flex flex-grow justify-center">
             <div className="flex space-x-8">
               {navLinks.map((link) => (
                 <a
@@ -103,7 +104,7 @@ const Navbar = () => {
           </div>
 
           {/* 3. CTA TLAČÍTKO (Div Vpravo) - NYNÍ OTEVÍRÁ KOŠÍK */}
-          <div className="hidden md:flex shrink-0 w-52 justify-end">
+          <div className="hidden xl:flex shrink-0 w-52 justify-end">
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-0 bg-transparent border-none outline-none cursor-pointer"
@@ -115,6 +116,7 @@ const Navbar = () => {
                 width={50}
                 height={50}
                 className="object-contain"
+                priority
               />
               {/* Badge s počtem položek */}
               {cartCount > 0 && (
@@ -126,7 +128,7 @@ const Navbar = () => {
           </div>
 
           {/* 4. MOBILNÍ HAMBURGER TLAČÍTKO */}
-          <div className="md:hidden flex items-center">
+          <div className="xl:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-stone-600 hover:text-stone-900 focus:outline-none p-2"
@@ -144,7 +146,7 @@ const Navbar = () => {
       </div>
 
       {/* 5. MOBILNÍ MENU (Rozbalovací část) */}
-      <div className={`md:hidden absolute w-full bg-white border-b border-stone-100 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 visible top-full' : 'opacity-0 invisible -top-5'}`}>
+      <div className={`xl:hidden absolute w-full bg-white border-b border-stone-100 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 visible top-full' : 'opacity-0 invisible -top-5'}`}>
         <div className="px-4 pt-2 pb-6 space-y-2 shadow-lg flex flex-col items-center">
           {navLinks.map((link) => (
             <a

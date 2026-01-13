@@ -3,9 +3,9 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { db } from "../firebase";
 // PŘIDÁNO: query a orderBy pro řazení
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, doc } from "firebase/firestore";
 import Image from "next/image";
-import { useCart } from "../context/CartContext"; 
+import { useCart } from "../context/CartContext";
 
 const staticCollections = [];
 
@@ -14,40 +14,63 @@ const Flowers = () => {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    // ZMĚNA: Vytvoříme dotaz, který rovnou seřadí sekce podle 'order'
     const sectionsQuery = query(
-      collection(db, "sections"), 
-      orderBy("order", "asc") // Seřadit vzestupně (1, 2, 3... 9999)
+      collection(db, "sections"),
+      orderBy("order", "asc")
     );
 
-    // Použijeme sectionsQuery místo obyčejného collection(db, "sections")
     const unsubSections = onSnapshot(sectionsQuery, (sectionsSnap) => {
       const sectionsArr = [];
       sectionsSnap.forEach((doc) => {
-        sectionsArr.push({ id: doc.id, ...doc.data() });
+        if (doc.id !== "global_settings") {
+          sectionsArr.push({ id: doc.id, ...doc.data() });
+        }
       });
-      
-      onSnapshot(collection(db, "flowers"), (flowersSnap) => {
-        const flowersArr = [];
-        flowersSnap.forEach((doc) => {
-          const data = doc.data();
-          flowersArr.push({ 
-            id: doc.id, 
-            ...data,
-            stock: data.stock !== undefined ? data.stock : 0
-          });
-        });
-       
-        // Seskupení (pořadí sekcí je nyní garantováno díky sectionsQuery)
-        const dynamicCollections = sectionsArr.map((section) => ({
-          title: section.name,
-          items: flowersArr.filter((flower) => flower.section === section.name)
-        }));
-        
-        // Filtrování prázdných sekcí (volitelné, pokud chceš zobrazit i prázdné, smaž .filter)
-        // const filteredCollections = dynamicCollections.filter(col => col.items.length > 0);
 
-        setCollections(dynamicCollections.length > 0 ? dynamicCollections : staticCollections);
+      onSnapshot(doc(db, "sections", "global_settings"), (settingsSnap) => {
+        const globalSort = settingsSnap.exists() ? settingsSnap.data().sortBy : "newest";
+
+        onSnapshot(collection(db, "flowers"), (flowersSnap) => {
+          const flowersArr = [];
+          flowersSnap.forEach((doc) => {
+            const data = doc.data();
+            flowersArr.push({
+              id: doc.id,
+              ...data,
+              stock: data.stock !== undefined ? data.stock : 0
+            });
+          });
+
+          // Funkce pro řazení
+          const sortItems = (items) => {
+            return [...items].sort((a, b) => {
+              switch (globalSort) {
+                case "newest":
+                  return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+                case "oldest":
+                  return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+                case "nameAZ":
+                  return (a.name || "").localeCompare(b.name || "", "cs");
+                case "nameZA":
+                  return (b.name || "").localeCompare(a.name || "", "cs");
+                case "priceASC":
+                  return Number(a.price || 0) - Number(b.price || 0);
+                case "priceDESC":
+                  return Number(b.price || 0) - Number(a.price || 0);
+                default:
+                  return 0;
+              }
+            });
+          };
+
+          // Seskupení a seřazení položek v rámci každé sekce
+          const dynamicCollections = sectionsArr.map((section) => ({
+            title: section.name,
+            items: sortItems(flowersArr.filter((flower) => flower.section === section.name))
+          }));
+
+          setCollections(dynamicCollections.length > 0 ? dynamicCollections : staticCollections);
+        });
       });
     });
     return () => unsubSections();
@@ -59,7 +82,7 @@ const Flowers = () => {
         // Zobrazíme sekci jen pokud v ní něco je (volitelné)
         collection.items.length > 0 && (
           <div key={sectionIndex} className="mb-24 last:mb-0">
-            <motion.h2 
+            <motion.h2
               className="text-3xl md:text-4xl font-bold mb-12 text-center text-stone-800 tracking-wide"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -81,32 +104,32 @@ const Flowers = () => {
                   <div className="relative mb-6 overflow-hidden">
                     <Image
                       src={item.img || item.imageUrl}
-                      alt={item.name}
+                      alt={`${item.name} - Čerstvé květiny z Boleveckého květinářství`}
                       width={400}
                       height={400}
                       className="w-full h-96 object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    
+
                     {item.stock > 0 && (
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                              onClick={() => addToCart(item)}
-                              className="bg-white text-stone-900 px-6 py-2 rounded-full font-medium hover:bg-stone-100 transform translate-y-4 group-hover:translate-y-0 transition-all"
-                          >
-                              Přidat do košíku
-                          </button>
+                        <button
+                          onClick={() => addToCart(item)}
+                          className="bg-white text-stone-900 px-6 py-2 rounded-full font-medium hover:bg-stone-100 transform translate-y-4 group-hover:translate-y-0 transition-all"
+                        >
+                          Přidat do košíku
+                        </button>
                       </div>
                     )}
 
                     {item.stock < 3 && item.stock > 0 && (
-                        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
-                            Poslední kusy!
-                        </div>
+                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
+                        Poslední kusy!
+                      </div>
                     )}
                     {item.stock === 0 && (
-                        <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                            <span className="bg-stone-800 text-white px-4 py-2 font-bold uppercase tracking-widest text-sm">Vyprodáno</span>
-                        </div>
+                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                        <span className="bg-stone-800 text-white px-4 py-2 font-bold uppercase tracking-widest text-sm">Vyprodáno</span>
+                      </div>
                     )}
                   </div>
 
@@ -117,25 +140,24 @@ const Flowers = () => {
                     <p className="text-stone-800 font-semibold mb-1 text-lg">
                       {item.price} Kč
                     </p>
-                    
+
                     <p className={`text-xs mb-3 font-medium ${item.stock < 3 ? "text-red-600" : "text-green-600"}`}>
-                      {item.stock > 0 
-                          ? `Skladem: ${item.stock} ks` 
-                          : "Není skladem"}
+                      {item.stock > 0
+                        ? `Skladem: ${item.stock} ks`
+                        : "Není skladem"}
                     </p>
 
                     <p className="text-stone-500 text-sm mb-4">
                       {item.subtitle}
                     </p>
-                    
+
                     <button
                       onClick={() => addToCart(item)}
                       disabled={item.stock === 0}
-                      className={`mt-auto border px-4 py-2 rounded transition-colors text-sm uppercase tracking-wider ${
-                          item.stock === 0 
-                          ? "border-stone-200 text-stone-300 cursor-not-allowed" 
-                          : "border-stone-300 text-stone-600 hover:bg-stone-900 hover:text-white"
-                      }`}
+                      className={`mt-auto border px-4 py-2 rounded transition-colors text-sm uppercase tracking-wider ${item.stock === 0
+                        ? "border-stone-200 text-stone-300 cursor-not-allowed"
+                        : "border-stone-300 text-stone-600 hover:bg-stone-900 hover:text-white"
+                        }`}
                     >
                       {item.stock === 0 ? "Vyprodáno" : "Do košíku"}
                     </button>

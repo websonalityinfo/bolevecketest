@@ -10,6 +10,8 @@ import {
   orderBy,
   where,
   writeBatch,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Image from "next/image";
@@ -36,6 +38,9 @@ const AdminPanel = ({ onLogout }) => {
   const [sekce, setSekce] = useState([]);
   const [kvetiny, setKvetiny] = useState([]);
   const [zprava, setZprava] = useState("");
+  const [filterSekce, setFilterSekce] = useState(""); // Filtr pro sekce
+  const [sortBy, setSortBy] = useState("newest"); // Řazení: newest, oldest, nameAZ, nameZA
+  const [globalSortBy, setGlobalSortBy] = useState("newest"); // Globální řazení pro web
 
   // Editace
   const [editKvetinaId, setEditKvetinaId] = useState(null);
@@ -69,13 +74,40 @@ const AdminPanel = ({ onLogout }) => {
       );
       const querySnapshot = await getDocs(sectionsQuery);
       const sectionsArr = [];
-      querySnapshot.forEach((doc) =>
-        sectionsArr.push({ id: doc.id, ...doc.data() })
-      );
+      querySnapshot.forEach((doc) => {
+        // Filtrovat konfigurační dokument
+        if (doc.id !== "global_settings") {
+          sectionsArr.push({ id: doc.id, ...doc.data() });
+        }
+      });
 
       setSekce(sectionsArr);
     } catch (err) {
       console.error("Chyba při načítání sekcí: ", err);
+    }
+  };
+
+  const nactiGlobalniRazeni = async () => {
+    try {
+      const docRef = doc(db, "sections", "global_settings");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setGlobalSortBy(docSnap.data().sortBy || "newest");
+      }
+    } catch (err) {
+      console.error("Chyba při načítání globálního řazení:", err);
+    }
+  };
+
+  const ulozGlobalniRazeni = async (novySort) => {
+    try {
+      setGlobalSortBy(novySort);
+      const docRef = doc(db, "sections", "global_settings");
+      await setDoc(docRef, { sortBy: novySort, isGlobalConfig: true });
+      setZprava("Globální řazení uloženo.");
+    } catch (err) {
+      console.error("Chyba při ukládání globálního řazení:", err);
+      setZprava("Chyba při ukládání řazení.");
     }
   };
 
@@ -95,6 +127,7 @@ const AdminPanel = ({ onLogout }) => {
         stock: f.stock !== undefined ? f.stock : 0,
         sekce: f.section,
         urlObrazku: f.imageUrl,
+        createdAt: f.createdAt || null,
       }));
       setKvetiny(ceskeKvetiny);
     } catch (err) {
@@ -202,6 +235,7 @@ const AdminPanel = ({ onLogout }) => {
         stock: Number(kvetina.skladem) || 0,
         imageUrl: url,
         section: kvetina.sekce,
+        createdAt: new Date().toISOString(),
       };
 
       const docRef = await addDoc(collection(db, "flowers"), novaData);
@@ -216,6 +250,7 @@ const AdminPanel = ({ onLogout }) => {
           stock: novaData.stock,
           sekce: novaData.section,
           urlObrazku: novaData.imageUrl,
+          createdAt: novaData.createdAt,
         },
       ]);
 
@@ -259,14 +294,14 @@ const AdminPanel = ({ onLogout }) => {
         prev.map((k) =>
           k.id === editKvetinaId
             ? {
-                ...k,
-                nazev: updateData.name,
-                popis: updateData.description,
-                cena: updateData.price,
-                stock: updateData.stock,
-                sekce: updateData.section,
-                urlObrazku: updateData.imageUrl,
-              }
+              ...k,
+              nazev: updateData.name,
+              popis: updateData.description,
+              cena: updateData.price,
+              stock: updateData.stock,
+              sekce: updateData.section,
+              urlObrazku: updateData.imageUrl,
+            }
             : k
         )
       );
@@ -356,11 +391,11 @@ const AdminPanel = ({ onLogout }) => {
         prev.map((o) =>
           o.id === orderId
             ? {
-                ...o,
-                status: newStatus,
-                fulfillmentStatus:
-                  newStatus === "new" ? "RECEIVED" : "FULFILLED",
-              }
+              ...o,
+              status: newStatus,
+              fulfillmentStatus:
+                newStatus === "new" ? "RECEIVED" : "FULFILLED",
+            }
             : o
         )
       );
@@ -371,6 +406,7 @@ const AdminPanel = ({ onLogout }) => {
 
   useEffect(() => {
     nactiSekce();
+    nactiGlobalniRazeni();
     nactiKvetiny();
     fetchOrders();
   }, []);
@@ -441,21 +477,19 @@ const AdminPanel = ({ onLogout }) => {
       <div className="flex mb-8 gap-4 border-b border-stone-200">
         <button
           onClick={() => setActiveTab("content")}
-          className={`pb-3 px-4 font-semibold text-lg border-b-2 transition-colors ${
-            activeTab === "content"
-              ? "border-green-600 text-green-700"
-              : "border-transparent text-stone-500"
-          }`}
+          className={`pb-3 px-4 font-semibold text-lg border-b-2 transition-colors ${activeTab === "content"
+            ? "border-green-600 text-green-700"
+            : "border-transparent text-stone-500"
+            }`}
         >
           Produkty
         </button>
         <button
           onClick={() => setActiveTab("orders")}
-          className={`pb-3 px-4 font-semibold text-lg border-b-2 transition-colors ${
-            activeTab === "orders"
-              ? "border-rose-600 text-rose-700"
-              : "border-transparent text-stone-500"
-          }`}
+          className={`pb-3 px-4 font-semibold text-lg border-b-2 transition-colors ${activeTab === "orders"
+            ? "border-rose-600 text-rose-700"
+            : "border-transparent text-stone-500"
+            }`}
         >
           Objednávky
         </button>
@@ -464,11 +498,10 @@ const AdminPanel = ({ onLogout }) => {
       {/* ZPRÁVY */}
       {zprava && (
         <div
-          className={`mb-4 p-3 rounded border ${
-            zprava.includes("Chyba")
-              ? "bg-red-100 text-red-700 border-red-300"
-              : "bg-green-100 text-green-700 border-green-300"
-          }`}
+          className={`mb-4 p-3 rounded border ${zprava.includes("Chyba")
+            ? "bg-red-100 text-red-700 border-red-300"
+            : "bg-green-100 text-green-700 border-green-300"
+            }`}
         >
           {zprava}
         </div>
@@ -477,6 +510,33 @@ const AdminPanel = ({ onLogout }) => {
       {/* OBSAH: PRODUKTY */}
       {activeTab === "content" && (
         <div className="animate-fade-in">
+          {/* Globální nastavení řazení */}
+          <div className="mb-8 p-6 border rounded-lg bg-blue-50 border-blue-100">
+            <h3 className="text-lg font-semibold mb-2 text-blue-800 flex items-center gap-2">
+              <span className="text-xl">⚙️</span> Globální řazení na webu
+            </h3>
+            <p className="text-sm text-blue-600 mb-4">
+              Toto nastavení ovlivní pořadí květin ve všech sekcích na hlavní stránce pro zákazníky.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-grow">
+                <label className="block text-sm font-medium mb-1 text-blue-700">Vyberte způsob řazení:</label>
+                <select
+                  value={globalSortBy}
+                  onChange={(e) => ulozGlobalniRazeni(e.target.value)}
+                  className="border p-2 rounded w-full bg-white text-blue-900 border-blue-200"
+                >
+                  <option value="newest">Nejnovější (podle přidání)</option>
+                  <option value="oldest">Nejstarší (podle přidání)</option>
+                  <option value="nameAZ">Abecedně (A-Z)</option>
+                  <option value="nameZA">Abecedně (Z-A)</option>
+                  <option value="priceASC">Cena (od nejlevnějšího)</option>
+                  <option value="priceDESC">Cena (od nejdražšího)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Sekce formuláře */}
           {!editSekceId ? (
             <form
@@ -777,47 +837,103 @@ const AdminPanel = ({ onLogout }) => {
           )}
 
           {/* Seznam květin */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {kvetiny.map((k) => (
-              <div
-                key={k.id}
-                className="border p-4 rounded shadow bg-white flex flex-col relative"
+          <div className="mb-4 flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold mb-2 text-stone-700">
+                Filtrovat podle sekce:
+              </label>
+              <select
+                value={filterSekce}
+                onChange={(e) => setFilterSekce(e.target.value)}
+                className="border p-2 rounded w-full"
               >
-                <div className="h-40 w-full relative mb-4">
-                  {k.urlObrazku ? (
-                    <Image
-                      src={k.urlObrazku}
-                      fill
-                      className="object-cover rounded"
-                      alt={k.nazev}
-                    />
-                  ) : (
-                    <div className="bg-gray-200 w-full h-full" />
-                  )}
-                  <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-bold shadow text-stone-700">
-                    Sklad: {k.stock} ks
+                <option value="">Všechny sekce</option>
+                {sekce.map((s) => (
+                  <option key={s.id} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1">
+              <label className="block text-sm font-semibold mb-2 text-stone-700">
+                Řadit podle:
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border p-2 rounded w-full"
+              >
+                <option value="newest">Nejnovější</option>
+                <option value="oldest">Nejstarší</option>
+                <option value="nameAZ">Název A-Z</option>
+                <option value="nameZA">Název Z-A</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {kvetiny
+              .filter((k) => !filterSekce || k.sekce === filterSekce)
+              .sort((a, b) => {
+                switch (sortBy) {
+                  case "newest":
+                    if (!a.createdAt) return 1;
+                    if (!b.createdAt) return -1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                  case "oldest":
+                    if (!a.createdAt) return 1;
+                    if (!b.createdAt) return -1;
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                  case "nameAZ":
+                    return a.nazev.localeCompare(b.nazev, "cs");
+                  case "nameZA":
+                    return b.nazev.localeCompare(a.nazev, "cs");
+                  default:
+                    return 0;
+                }
+              })
+              .map((k) => (
+                <div
+                  key={k.id}
+                  className="border p-4 rounded shadow bg-white flex flex-col relative"
+                >
+                  <div className="h-40 w-full relative mb-4">
+                    {k.urlObrazku ? (
+                      <Image
+                        src={k.urlObrazku}
+                        fill
+                        className="object-cover rounded"
+                        alt={k.nazev}
+                      />
+                    ) : (
+                      <div className="bg-gray-200 w-full h-full" />
+                    )}
+                    <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-bold shadow text-stone-700">
+                      Sklad: {k.stock} ks
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-lg">{k.nazev}</h3>
+                  <p className="text-gray-500 text-sm">
+                    {k.sekce} - {k.cena} Kč
+                  </p>
+                  <div className="mt-auto flex gap-2 pt-2">
+                    <button
+                      onClick={() => zahajUpravuKvetiny(k)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded flex-1"
+                    >
+                      Upravit
+                    </button>
+                    <button
+                      onClick={() => smazKvetinu(k.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded flex-1"
+                    >
+                      Smazat
+                    </button>
                   </div>
                 </div>
-                <h3 className="font-bold text-lg">{k.nazev}</h3>
-                <p className="text-gray-500 text-sm">
-                  {k.sekce} - {k.cena} Kč
-                </p>
-                <div className="mt-auto flex gap-2 pt-2">
-                  <button
-                    onClick={() => zahajUpravuKvetiny(k)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded flex-1"
-                  >
-                    Upravit
-                  </button>
-                  <button
-                    onClick={() => smazKvetinu(k.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded flex-1"
-                  >
-                    Smazat
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
@@ -897,20 +1013,20 @@ const AdminPanel = ({ onLogout }) => {
                         <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
                           {Array.isArray(order.items)
                             ? order.items.map((item, i) => (
-                                <div key={i}>
-                                  {item.name}{" "}
-                                  <span className="text-gray-400">
-                                    ({item.quantity}x)
-                                  </span>
-                                </div>
-                              ))
+                              <div key={i}>
+                                {item.name}{" "}
+                                <span className="text-gray-400">
+                                  ({item.quantity}x)
+                                </span>
+                              </div>
+                            ))
                             : order.items
-                            ? order.items
+                              ? order.items
                                 .split(",")
                                 .map((part, i) => (
                                   <div key={i}>{part.trim()}</div>
                                 ))
-                            : "Žádné položky"}
+                              : "Žádné položky"}
                         </td>
                         {/* NOVÝ SLOUPEC: Vzkaz */}
                         <td className="px-6 py-4 text-xs text-stone-600 max-w-[150px] whitespace-pre-wrap">
@@ -923,11 +1039,10 @@ const AdminPanel = ({ onLogout }) => {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`px-2 py-1 text-xs rounded-full font-bold ${
-                              isNew
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
+                            className={`px-2 py-1 text-xs rounded-full font-bold ${isNew
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                              }`}
                           >
                             {isNew ? "NOVÁ" : "HOTOVO"}
                           </span>
@@ -935,11 +1050,10 @@ const AdminPanel = ({ onLogout }) => {
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleUpdateStatus(order.id, status)}
-                            className={`text-white text-xs px-3 py-1 rounded ${
-                              isNew
-                                ? "bg-green-500 hover:bg-green-600"
-                                : "bg-orange-500 hover:bg-orange-600"
-                            }`}
+                            className={`text-white text-xs px-3 py-1 rounded ${isNew
+                              ? "bg-green-500 hover:bg-green-600"
+                              : "bg-orange-500 hover:bg-orange-600"
+                              }`}
                           >
                             {isNew ? "Dokončit" : "Vrátit zpět"}
                           </button>

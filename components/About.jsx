@@ -24,10 +24,11 @@ const About = () => {
               {/* Samotná fotka */}
               <Image
                 src="/obchod.jpg"
-                alt="Interiér našeho květinářství"
+                alt="Interiér našeho květinářství - Bolevecké květiny Plzeň"
                 className="relative z-10 w-full h-[400px] lg:h-[600px] object-cover rounded-lg shadow-md"
                 width={700}
                 height={700}
+                priority
               />
             </div>
           </motion.div>

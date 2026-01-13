@@ -186,7 +186,6 @@ const ContactPage = () => {
                     viewport={{ once: true }}
                 >
                     <div className="bg-white rounded-lg shadow-lg p-8 border-t-4 border-green-600">
-                        <h2 className="text-2xl font-bold text-stone-900 mb-6">Kde nás najdete</h2>
                         <div className="rounded-xl overflow-hidden shadow-lg">
                             <iframe
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2576.291307344736!2d13.380614377183498!3d49.78058657147202!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470af17f1afe6ce1%3A0xbae7ce35df946161!2zQm9sZXZlY2vDqSBLdsSbdGlueQ!5e0!3m2!1scs!2scz!4v1768143574845!5m2!1scs!2scz"
